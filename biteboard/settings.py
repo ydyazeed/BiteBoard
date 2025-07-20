@@ -26,7 +26,12 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-your-secret-key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = ['*']  # Be more permissive for now
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'biteboard.onrender.com',
+    '.onrender.com',  # Allow all subdomains on render
+]  # More secure than '*'
 
 # Application definition
 INSTALLED_APPS = [
