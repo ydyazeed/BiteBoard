@@ -6,6 +6,9 @@ import { useAuth } from './context/AuthContext'
 import Wishlist from './components/Wishlist'
 import AuthModal from './components/AuthModal'
 
+// Get the API URL from environment variables
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
 function App() {
   const [isLoading, setIsLoading] = useState(false)
   const [cafes, setCafes] = useState([])
@@ -17,7 +20,7 @@ function App() {
     return saved ? JSON.parse(saved) : []
   })
 
-  const { user, tokens, refreshToken } = useAuth()
+  const { user, tokens } = useAuth()
 
   // Set up axios interceptor for authentication
   useEffect(() => {
@@ -41,7 +44,7 @@ function App() {
       if (user && tokens) {
         try {
           // First, get the server wishlist
-          const response = await axios.get('http://localhost:8000/api/wishlist/sync/')
+          const response = await axios.get(`${API_URL}/api/wishlist/sync/`)
           console.log('Server wishlist:', response.data)
           const serverWishlist = response.data
 
@@ -62,7 +65,7 @@ function App() {
               if (!exists) {
                 try {
                   console.log('Saving item to server:', item)
-                  const saveResponse = await axios.post('http://localhost:8000/api/wishlist/', {
+                  const saveResponse = await axios.post(`${API_URL}/api/wishlist/`, {
                     dish_name: item.dish_name,
                     cafe_name: item.cafe_name,
                     cafe_address: item.cafe_address
@@ -75,7 +78,7 @@ function App() {
             }
             
             // After syncing, get the updated server wishlist
-            const updatedResponse = await axios.get('http://localhost:8000/api/wishlist/sync/')
+            const updatedResponse = await axios.get(`${API_URL}/api/wishlist/sync/`)
             console.log('Updated server wishlist:', updatedResponse.data)
             setWishlist(updatedResponse.data)
           } else {
@@ -106,7 +109,7 @@ function App() {
       })
 
       // Call our API
-      const response = await axios.post('http://localhost:8000/api/find-cafes/', {
+      const response = await axios.post(`${API_URL}/api/find-cafes/`, {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude
       })
@@ -136,7 +139,7 @@ function App() {
     if (user && tokens) {
       try {
         console.log('Adding to server wishlist:', wishlistItem)
-        const response = await axios.post('http://localhost:8000/api/wishlist/', wishlistItem)
+        const response = await axios.post(`${API_URL}/api/wishlist/`, wishlistItem)
         console.log('Server response:', response.data)
         setWishlist(prev => [...prev, response.data])
       } catch (error) {
@@ -151,7 +154,7 @@ function App() {
   const removeFromWishlist = async (item) => {
     if (user && tokens) {
       try {
-        await axios.delete(`http://localhost:8000/api/wishlist/${item.id}/`)
+        await axios.delete(`${API_URL}/api/wishlist/${item.id}/`)
         setWishlist(prev => prev.filter(i => i.id !== item.id))
       } catch (error) {
         console.error('Failed to remove from wishlist:', error.response?.data || error)

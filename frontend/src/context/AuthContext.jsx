@@ -1,6 +1,7 @@
 import { createContext, useState, useContext, useEffect } from 'react'
 import axios from 'axios'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const AuthContext = createContext(null)
 
 export const useAuth = () => useContext(AuthContext)
@@ -62,7 +63,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-      const response = await axios.post('http://localhost:8000/api/auth/login/', {
+      const response = await axios.post(`${API_URL}/api/auth/login/`, {
         username,
         password
       })
@@ -76,7 +77,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (username, email, password) => {
     try {
-      const response = await axios.post('http://localhost:8000/api/auth/register/', {
+      const response = await axios.post(`${API_URL}/api/auth/register/`, {
         username,
         email,
         password
@@ -100,7 +101,7 @@ export const AuthProvider = ({ children }) => {
   const refreshToken = async () => {
     if (!tokens?.refresh) return
     try {
-      const response = await axios.post('http://localhost:8000/api/auth/refresh/', {
+      const response = await axios.post(`${API_URL}/api/auth/refresh/`, {
         refresh: tokens.refresh
       })
       setTokens(prev => ({ ...prev, access: response.data.access }))
