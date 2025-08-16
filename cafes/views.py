@@ -9,8 +9,8 @@ from rest_framework import status, generics, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import WishlistItem
-from .serializers import UserSerializer, RegisterSerializer, WishlistItemSerializer
+from .models import WishlistItem, ShareableWishlist
+from .serializers import UserSerializer, RegisterSerializer, WishlistItemSerializer, ShareableWishlistSerializer
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -70,6 +70,68 @@ def sync_wishlist(request):
     logger.info(f"Returning {len(items)} wishlist items")
     logger.info(f"Data: {serializer.data}")
     return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def create_shareable_wishlist(request):
+    """
+    Create a shareable wishlist link
+    """
+    try:
+        logger.info(f"Creating shareable wishlist for user: {request.user.username}")
+        logger.info(f"Request data: {request.data}")
+        
+        title = request.data.get('title', f"{request.user.username}'s Wishlist")
+        
+        # Create shareable wishlist
+        shareable_wishlist = ShareableWishlist.objects.create(
+            user=request.user,
+            title=title
+        )
+        
+        logger.info(f"Created shareable wishlist with ID: {shareable_wishlist.share_id}")
+        
+        # Get user's wishlist items
+        wishlist_items = WishlistItem.objects.filter(user=request.user)
+        
+        # Include wishlist items in response
+        serializer = ShareableWishlistSerializer(shareable_wishlist)
+        response_data = serializer.data
+        response_data['wishlist_items'] = WishlistItemSerializer(wishlist_items, many=True).data
+        
+        logger.info(f"Returning response: {response_data}")
+        return Response(response_data, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        logger.error(f"Error creating shareable wishlist: {str(e)}")
+        return Response(
+            {"error": f"Failed to create shareable wishlist: {str(e)}"}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def view_shared_wishlist(request, share_id):
+    """
+    View a shared wishlist by share_id
+    """
+    try:
+        shareable_wishlist = ShareableWishlist.objects.get(
+            share_id=share_id, 
+            is_active=True
+        )
+        wishlist_items = WishlistItem.objects.filter(user=shareable_wishlist.user)
+        
+        serializer = ShareableWishlistSerializer(shareable_wishlist)
+        response_data = serializer.data
+        response_data['wishlist_items'] = WishlistItemSerializer(wishlist_items, many=True).data
+        
+        return Response(response_data)
+    except ShareableWishlist.DoesNotExist:
+        return Response(
+            {"error": "Shared wishlist not found or expired"}, 
+            status=status.HTTP_404_NOT_FOUND
+        )
 
 def analyze_reviews_for_dishes(cafe_name, reviews):
     """

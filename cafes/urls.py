@@ -12,6 +12,8 @@ urlpatterns = [
     path('wishlist/', views.WishlistView.as_view(), name='wishlist'),
     path('wishlist/<int:pk>/', views.WishlistItemView.as_view(), name='wishlist-item'),
     path('wishlist/sync/', views.sync_wishlist, name='sync-wishlist'),
+    path('wishlist/share/', views.create_shareable_wishlist, name='create-shareable-wishlist'),
+    path('shared/<uuid:share_id>/', views.view_shared_wishlist, name='view-shared-wishlist'),
     
     # Existing endpoints
     path('find-cafes/', views.find_cafes, name='find_cafes'),

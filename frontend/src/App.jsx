@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
-import { FaLocationDot, FaStar, FaHeart, FaRegHeart, FaXmark } from 'react-icons/fa6'
+import { FaLocationDot, FaStar, FaHeart, FaRegHeart, FaXmark, FaShare } from 'react-icons/fa6'
 import { MdCoffeeMaker, MdRecommend } from 'react-icons/md'
 import { useAuth } from './context/AuthContext'
 import Wishlist from './components/Wishlist'
 import AuthModal from './components/AuthModal'
+import ShareModal from './components/ShareModal'
 
 // Get the API URL from environment variables
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -15,6 +16,7 @@ function App() {
   const [error, setError] = useState(null)
   const [showWishlist, setShowWishlist] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
   const [wishlist, setWishlist] = useState(() => {
     const saved = localStorage.getItem('wishlist')
     return saved ? JSON.parse(saved) : []
@@ -172,6 +174,28 @@ function App() {
     )
   }
 
+  const handleShareWishlist = async (title) => {
+    try {
+      console.log('Creating share link with title:', title)
+      console.log('API URL:', `${API_URL}/api/wishlist/share/`)
+      console.log('Auth token:', tokens?.access ? 'Present' : 'Missing')
+      
+      const response = await axios.post(`${API_URL}/api/wishlist/share/`, {
+        title: title
+      })
+      
+      console.log('Share response:', response.data)
+      const shareId = response.data.share_id
+      const shareLink = `${window.location.origin}/shared/${shareId}`
+      return shareLink
+    } catch (error) {
+      console.error('Failed to create share link:', error.response?.data || error)
+      console.error('Error status:', error.response?.status)
+      console.error('Error details:', error.response)
+      throw error
+    }
+  }
+
   return (
     <div className="min-h-screen p-4 sm:p-8">
       <div className="max-w-4xl mx-auto">
@@ -278,12 +302,26 @@ function App() {
                     <h2 className="text-2xl font-semibold text-cafe-brown-800">
                       My Wishlist
                     </h2>
-                    <button
-                      onClick={() => setShowWishlist(false)}
-                      className="text-cafe-brown-500 hover:text-cafe-brown-700"
-                    >
-                      <FaXmark className="text-2xl" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {user && (
+                        <button
+                          onClick={() => {
+                            setShowShareModal(true)
+                            setShowWishlist(false) // Close wishlist panel when opening share modal
+                          }}
+                          className="text-cafe-brown-500 hover:text-cafe-brown-700 p-2"
+                          title="Share wishlist"
+                        >
+                          <FaShare className="text-xl" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setShowWishlist(false)}
+                        className="text-cafe-brown-500 hover:text-cafe-brown-700"
+                      >
+                        <FaXmark className="text-2xl" />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -330,6 +368,14 @@ function App() {
       {/* Auth Modal */}
       {showAuthModal && (
         <AuthModal onClose={() => setShowAuthModal(false)} />
+      )}
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <ShareModal 
+          onClose={() => setShowShareModal(false)}
+          onShare={handleShareWishlist}
+        />
       )}
     </div>
   )

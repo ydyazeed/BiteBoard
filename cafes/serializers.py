@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import WishlistItem
+from .models import WishlistItem, ShareableWishlist
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -26,4 +26,13 @@ class WishlistItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = WishlistItem
         fields = ('id', 'dish_name', 'cafe_name', 'cafe_address', 'created_at')
-        read_only_fields = ('created_at',) 
+        read_only_fields = ('created_at',)
+
+class ShareableWishlistSerializer(serializers.ModelSerializer):
+    wishlist_items = WishlistItemSerializer(many=True, read_only=True)
+    user_name = serializers.CharField(source='user.username', read_only=True)
+    
+    class Meta:
+        model = ShareableWishlist
+        fields = ('share_id', 'title', 'created_at', 'user_name', 'wishlist_items')
+        read_only_fields = ('share_id', 'created_at', 'user_name') 
